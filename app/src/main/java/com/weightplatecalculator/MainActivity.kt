@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.weightplatecalculator.ui.MainViewModel
 import com.weightplatecalculator.ui.screens.CalculatorScreen
 import com.weightplatecalculator.ui.screens.InventoryScreen
+import com.weightplatecalculator.ui.screens.SettingsScreen
 import com.weightplatecalculator.ui.theme.WeightPlateCalculatorTheme
 
 /**
@@ -24,28 +25,42 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val uiState by viewModel.uiState.collectAsState()
 
-                if (uiState.showInventoryScreen) {
-                    InventoryScreen(
-                        inventory = uiState.plateInventory,
-                        onPlateCountChange = viewModel::updatePlateInventory,
-                        onBackClick = { viewModel.showInventoryScreen(false) }
-                    )
-                } else {
-                    CalculatorScreen(
-                        uiState = uiState,
-                        onTargetWeightChange = viewModel::updateTargetWeight,
-                        onBarSelected = viewModel::selectBar,
-                        onCalculate = viewModel::calculate,
-                        onToggleReverseMode = viewModel::toggleReverseMode,
-                        onReversePlateCountChange = viewModel::updateReversePlateCount,
-                        onShowAddBarDialog = viewModel::showAddBarDialog,
-                        onAddCustomBar = viewModel::addCustomBar,
-                        onDeleteBar = viewModel::deleteCustomBar,
-                        onShowInventory = { viewModel.showInventoryScreen(true) },
-                        onSetCustomStartingWeight = viewModel::setCustomStartingWeight,
-                        onClearCustomStartingWeight = viewModel::clearCustomStartingWeight,
-                        onClearError = viewModel::clearError
-                    )
+                when {
+                    uiState.showSettingsScreen -> {
+                        SettingsScreen(
+                            settings = uiState.appSettings,
+                            onShowPlatesInCalculatorChange = viewModel::updateShowPlatesInCalculator,
+                            onPresetBarWeightChange = viewModel::updatePresetBarWeight,
+                            onResetPresetBarWeight = viewModel::resetPresetBarWeight,
+                            onResetAllPresetBarWeights = viewModel::resetAllPresetBarWeights,
+                            onBackClick = { viewModel.showSettingsScreen(false) }
+                        )
+                    }
+                    uiState.showInventoryScreen -> {
+                        InventoryScreen(
+                            inventory = uiState.plateInventory,
+                            onPlateCountChange = viewModel::updatePlateInventory,
+                            onBackClick = { viewModel.showInventoryScreen(false) }
+                        )
+                    }
+                    else -> {
+                        CalculatorScreen(
+                            uiState = uiState,
+                            onTargetWeightChange = viewModel::updateTargetWeight,
+                            onBarSelected = viewModel::selectBar,
+                            onCalculate = viewModel::calculate,
+                            onToggleReverseMode = viewModel::toggleReverseMode,
+                            onReversePlateCountChange = viewModel::updateReversePlateCount,
+                            onShowAddBarDialog = viewModel::showAddBarDialog,
+                            onAddCustomBar = viewModel::addCustomBar,
+                            onDeleteBar = viewModel::deleteCustomBar,
+                            onShowInventory = { viewModel.showInventoryScreen(true) },
+                            onShowSettings = { viewModel.showSettingsScreen(true) },
+                            onSetCustomStartingWeight = viewModel::setCustomStartingWeight,
+                            onClearCustomStartingWeight = viewModel::clearCustomStartingWeight,
+                            onClearError = viewModel::clearError
+                        )
+                    }
                 }
             }
         }

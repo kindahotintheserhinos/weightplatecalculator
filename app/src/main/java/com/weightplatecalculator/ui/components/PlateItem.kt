@@ -27,23 +27,39 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.weightplatecalculator.ui.theme.PlateBlack
-import com.weightplatecalculator.ui.theme.PlateBlue
-import com.weightplatecalculator.ui.theme.PlateGreen
-import com.weightplatecalculator.ui.theme.PlateRed
-import com.weightplatecalculator.ui.theme.PlateWhite
-import com.weightplatecalculator.ui.theme.PlateYellow
+import com.weightplatecalculator.ui.theme.Plate0_25Black
+import com.weightplatecalculator.ui.theme.Plate0_5CandyPink
+import com.weightplatecalculator.ui.theme.Plate0_75ChocolateBrown
+import com.weightplatecalculator.ui.theme.Plate100CharcoalGray
+import com.weightplatecalculator.ui.theme.Plate10White
+import com.weightplatecalculator.ui.theme.Plate1ScarletRed
+import com.weightplatecalculator.ui.theme.Plate1_25DarkOrange
+import com.weightplatecalculator.ui.theme.Plate25IrishGreen
+import com.weightplatecalculator.ui.theme.Plate2_5AquaGreen
+import com.weightplatecalculator.ui.theme.Plate35BananaYellow
+import com.weightplatecalculator.ui.theme.Plate45Blue
+import com.weightplatecalculator.ui.theme.Plate55Red
+import com.weightplatecalculator.ui.theme.Plate5NavyBlue
 
 /**
- * Returns a color based on the plate weight (following Olympic color standards).
+ * Returns a color based on the plate weight (matching gym plate standards).
  */
 fun getPlateColor(weight: Double): Color {
-    return when {
-        weight >= 55 -> PlateRed
-        weight >= 45 -> PlateBlue
-        weight >= 25 -> PlateGreen
-        weight >= 10 -> PlateYellow
-        else -> PlateWhite
+    return when (weight) {
+        100.0 -> Plate100CharcoalGray
+        55.0 -> Plate55Red
+        45.0 -> Plate45Blue
+        35.0 -> Plate35BananaYellow
+        25.0 -> Plate25IrishGreen
+        10.0 -> Plate10White
+        5.0 -> Plate5NavyBlue
+        2.5 -> Plate2_5AquaGreen
+        1.25 -> Plate1_25DarkOrange
+        1.0 -> Plate1ScarletRed
+        0.75 -> Plate0_75ChocolateBrown
+        0.5 -> Plate0_5CandyPink
+        0.25 -> Plate0_25Black
+        else -> Plate10White // Default fallback
     }
 }
 
