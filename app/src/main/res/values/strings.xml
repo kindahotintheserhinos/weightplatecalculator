@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Weight Plate Calculator</string>
+    <string name="calculate">Calculate</string>
+    <string name="target_weight">Target Weight</string>
+    <string name="bar_weight">Bar Weight</string>
+    <string name="plates_needed">Plates Needed</string>
+    <string name="each_side">Each Side</string>
+    <string name="total_stack">Total Stack</string>
+    <string name="reverse_mode">Reverse Mode</string>
+    <string name="inventory">Plate Inventory</string>
+    <string name="bars">Bars</string>
+    <string name="loading_pin">Loading Pin</string>
+    <string name="custom_weight">Custom Weight</string>
+    <string name="add_custom_bar">Add Custom Bar</string>
+    <string name="bar_name">Bar Name</string>
+    <string name="weight_lbs">Weight (lbs)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="settings">Settings</string>
+    <string name="plates_available">plates available</string>
+    <string name="per_side">per side</string>
+    <string name="total">Total</string>
+    <string name="cannot_reach_target">Cannot reach exact target with available plates</string>
+    <string name="closest_weight">Closest achievable weight</string>
+</resources>
