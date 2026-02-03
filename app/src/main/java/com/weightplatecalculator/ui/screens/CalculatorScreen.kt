@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
@@ -72,6 +73,7 @@ fun CalculatorScreen(
     onAddCustomBar: (String, Double, Boolean) -> Unit,
     onDeleteBar: (String) -> Unit,
     onShowInventory: () -> Unit,
+    onShowSettings: () -> Unit,
     onSetCustomStartingWeight: (Double, Boolean) -> Unit,
     onClearCustomStartingWeight: () -> Unit,
     onClearError: () -> Unit
@@ -96,6 +98,12 @@ fun CalculatorScreen(
                         Icon(
                             imageVector = Icons.Default.Inventory,
                             contentDescription = "Plate inventory"
+                        )
+                    }
+                    IconButton(onClick = onShowSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
                         )
                     }
                 },
@@ -262,6 +270,37 @@ fun CalculatorScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         Text("Calculate Plates")
+                    }
+                }
+
+                // Show available plates if setting is enabled
+                if (uiState.appSettings.showPlatesInCalculator && uiState.plateInventory.getAvailablePlates().isNotEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Available Plates",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                uiState.plateInventory.getAvailablePlates().forEach { plate ->
+                                    PlateResultItem(
+                                        weight = plate.weight,
+                                        count = plate.availableCount
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 

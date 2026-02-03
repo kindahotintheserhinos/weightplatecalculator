@@ -3,6 +3,7 @@ package com.weightplatecalculator.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.weightplatecalculator.data.model.AppSettings
 import com.weightplatecalculator.data.model.Bar
 import com.weightplatecalculator.data.model.CalculationResult
 import com.weightplatecalculator.data.model.CustomStartingWeight
@@ -35,6 +36,8 @@ data class MainUiState(
     val isUsingCustomStartingWeight: Boolean = false,
     val showAddBarDialog: Boolean = false,
     val showInventoryScreen: Boolean = false,
+    val showSettingsScreen: Boolean = false,
+    val appSettings: AppSettings = AppSettings(),
     val errorMessage: String? = null
 )
 
@@ -53,28 +56,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             combine(
                 repository.plateInventoryFlow,
                 repository.customBarsFlow,
-                repository.lastSelectedBarIdFlow
-            ) { inventory, customBars, lastBarId ->
-                Triple(inventory, customBars, lastBarId)
-            }.collect { (inventory, customBars, lastBarId) ->
-                val allBars = Bar.PRESET_BARS + customBars
-                val selectedBar = lastBarId?.let { id ->
+                repository.lastSelectedBarIdFlow,
+                repository.appSettingsFlow
+            ) { inventory, customBars, lastBarId, settings ->
+                DataBundle(inventory, customBars, lastBarId, settings)
+            }.collect { bundle ->
+                // Use customized preset bars from settings
+                val presetBars = bundle.settings.getPresetBars()
+                val allBars = presetBars + bundle.customBars
+                val selectedBar = bundle.lastBarId?.let { id ->
                     allBars.find { it.id == id }
                 } ?: allBars.first()
 
                 _uiState.value = _uiState.value.copy(
-                    plateInventory = inventory,
+                    plateInventory = bundle.inventory,
                     allBars = allBars,
-                    selectedBar = selectedBar
+                    selectedBar = selectedBar,
+                    appSettings = bundle.settings
                 )
 
                 // Recalculate if we have a target weight
                 if (_uiState.value.targetWeight.isNotEmpty()) {
                     calculate()
                 }
+                // Recalculate reverse weight if in reverse mode
+                if (_uiState.value.isReverseMode && _uiState.value.reversePlates.isNotEmpty()) {
+                    recalculateReverseWeight()
+                }
             }
         }
     }
+
+    /**
+     * Data class to bundle combine results.
+     */
+    private data class DataBundle(
+        val inventory: PlateInventory,
+        val customBars: List<Bar>,
+        val lastBarId: String?,
+        val settings: AppSettings
+    )
 
     /**
      * Updates the target weight input.
@@ -109,6 +130,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.saveLastSelectedBarId(bar.id)
         }
+        // Recalculate reverse weight if in reverse mode
+        if (_uiState.value.isReverseMode && _uiState.value.reversePlates.isNotEmpty()) {
+            recalculateReverseWeight()
+        }
+    }
+
+    /**
+     * Recalculates the reverse total weight based on current plates and bar.
+     */
+    private fun recalculateReverseWeight() {
+        val state = _uiState.value
+        val platesPerSide = state.reversePlates.map { (weight, count) ->
+            PlateResult(WeightPlate(weight, count), count)
+        }
+
+        val barWeight: Double
+        val isLoadingPin: Boolean
+
+        if (state.isUsingCustomStartingWeight && state.customStartingWeight != null) {
+            barWeight = state.customStartingWeight.weight
+            isLoadingPin = state.customStartingWeight.isLoadingPin
+        } else {
+            barWeight = state.selectedBar.weight
+            isLoadingPin = state.selectedBar.isLoadingPin
+        }
+
+        val totalWeight = PlateCalculator.calculateTotalWeight(
+            barWeight = barWeight,
+            platesPerSide = platesPerSide,
+            isLoadingPin = isLoadingPin
+        )
+
+        _uiState.value = _uiState.value.copy(
+            reverseTotalWeight = totalWeight
+        )
     }
 
     /**
@@ -308,5 +364,57 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    /**
+     * Shows or hides the settings screen.
+     */
+    fun showSettingsScreen(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showSettingsScreen = show)
+    }
+
+    /**
+     * Updates the show plates in calculator setting.
+     */
+    fun updateShowPlatesInCalculator(show: Boolean) {
+        viewModelScope.launch {
+            repository.saveShowPlatesInCalculator(show)
+        }
+    }
+
+    /**
+     * Updates a preset bar weight.
+     */
+    fun updatePresetBarWeight(barId: String, weight: Double) {
+        viewModelScope.launch {
+            repository.updatePresetBarWeight(
+                barId = barId,
+                weight = weight,
+                currentSettings = _uiState.value.appSettings
+            )
+        }
+    }
+
+    /**
+     * Resets a preset bar weight to default.
+     */
+    fun resetPresetBarWeight(barId: String) {
+        val defaultWeight = AppSettings.DEFAULT_PRESET_BAR_WEIGHTS[barId] ?: return
+        viewModelScope.launch {
+            repository.updatePresetBarWeight(
+                barId = barId,
+                weight = defaultWeight,
+                currentSettings = _uiState.value.appSettings
+            )
+        }
+    }
+
+    /**
+     * Resets all preset bar weights to defaults.
+     */
+    fun resetAllPresetBarWeights() {
+        viewModelScope.launch {
+            repository.resetAllPresetBarWeights()
+        }
     }
 }

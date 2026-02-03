@@ -3,11 +3,13 @@ package com.weightplatecalculator.data.repository
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.weightplatecalculator.data.model.AppSettings
 import com.weightplatecalculator.data.model.Bar
 import com.weightplatecalculator.data.model.PlateInventory
 import com.weightplatecalculator.data.model.WeightPlate
@@ -30,6 +32,8 @@ class WeightDataRepository(private val context: Context) {
         private val PLATE_INVENTORY_KEY = stringPreferencesKey("plate_inventory")
         private val CUSTOM_BARS_KEY = stringPreferencesKey("custom_bars")
         private val LAST_SELECTED_BAR_KEY = stringPreferencesKey("last_selected_bar")
+        private val SHOW_PLATES_IN_CALCULATOR_KEY = booleanPreferencesKey("show_plates_in_calculator")
+        private val PRESET_BAR_WEIGHTS_KEY = stringPreferencesKey("preset_bar_weights")
     }
 
     /**
@@ -140,5 +144,63 @@ class WeightDataRepository(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[LAST_SELECTED_BAR_KEY] = barId
         }
+    }
+
+    /**
+     * Flow of the app settings.
+     */
+    val appSettingsFlow: Flow<AppSettings> = context.dataStore.data.map { preferences ->
+        val showPlates = preferences[SHOW_PLATES_IN_CALCULATOR_KEY] ?: false
+        val presetWeightsJson = preferences[PRESET_BAR_WEIGHTS_KEY]
+        val presetWeights: Map<String, Double> = if (presetWeightsJson != null) {
+            try {
+                val type = object : TypeToken<Map<String, Double>>() {}.type
+                gson.fromJson(presetWeightsJson, type)
+            } catch (e: Exception) {
+                AppSettings.DEFAULT_PRESET_BAR_WEIGHTS
+            }
+        } else {
+            AppSettings.DEFAULT_PRESET_BAR_WEIGHTS
+        }
+
+        AppSettings(
+            showPlatesInCalculator = showPlates,
+            presetBarWeights = presetWeights
+        )
+    }
+
+    /**
+     * Saves the show plates in calculator setting.
+     */
+    suspend fun saveShowPlatesInCalculator(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SHOW_PLATES_IN_CALCULATOR_KEY] = show
+        }
+    }
+
+    /**
+     * Saves the preset bar weights.
+     */
+    suspend fun savePresetBarWeights(weights: Map<String, Double>) {
+        context.dataStore.edit { preferences ->
+            val json = gson.toJson(weights)
+            preferences[PRESET_BAR_WEIGHTS_KEY] = json
+        }
+    }
+
+    /**
+     * Updates a single preset bar weight.
+     */
+    suspend fun updatePresetBarWeight(barId: String, weight: Double, currentSettings: AppSettings) {
+        val sanitizedWeight = weight.coerceAtLeast(0.0)
+        val updatedWeights = currentSettings.presetBarWeights + (barId to sanitizedWeight)
+        savePresetBarWeights(updatedWeights)
+    }
+
+    /**
+     * Resets all preset bar weights to defaults.
+     */
+    suspend fun resetAllPresetBarWeights() {
+        savePresetBarWeights(AppSettings.DEFAULT_PRESET_BAR_WEIGHTS)
     }
 }
